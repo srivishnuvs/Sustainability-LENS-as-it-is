@@ -4,3 +4,6 @@ PyPDF2
 pytesseract
 pdf2image
 python-multipart
+PyMuPDF
+google-generativeai
+python-dotenv
