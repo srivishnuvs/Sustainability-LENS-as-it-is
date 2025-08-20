@@ -8,7 +8,7 @@ This project was developed with a focus on balancing cutting-edge AI capabilitie
 
 ### ✨ Live Demo
 
-*[Link to your Loom/YouTube video demo here]*
+https://youtu.be/W9k8HR0vQ1k
 
 ---
 
