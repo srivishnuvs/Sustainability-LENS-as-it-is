@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainability Lens | ESG Analysis Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #005f73; --secondary-color: #0a9396; --accent-color: #94d2bd;
+            --background-color: #f8f9fa; --text-color: #333; --card-bg: #ffffff; --border-color: #e9ecef;
+        }
+        html, body { height: 100%; width: 100%; margin: 0; overflow: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; }
+
+        .main-container {
+            width: 100%;
+            height: 100vh;
+            display: grid;
+        }
+        .analysis-panel, .pdf-panel {
+            height: 100vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .analysis-panel {
+            padding: 30px;
+            background-color: var(--card-bg);
+        }
+        .pdf-panel {
+            padding: 20px;
+        }
+
+        /* --- KEY CHANGE: Final, Corrected CSS for the two states --- */
+
+        /* STATE 1: Initial Upload View (Default) */
+        .main-container {
+            grid-template-columns: 100%; /* Analysis panel takes full width */
+        }
+        .pdf-panel {
+            display: none; /* PDF viewer is completely hidden */
+        }
+
+        /* STATE 2: Active Analysis View */
+        .main-container.analysis-active {
+            grid-template-columns: 40% 60%; /* Switch to 2-panel layout */
+        }
+        .main-container.analysis-active .analysis-panel {
+            border-right: 1px solid var(--border-color);
+        }
+        .main-container.analysis-active .pdf-panel {
+            display: block; /* Make the PDF viewer visible */
+        }
+        
+        /* (Other styles are unchanged) */
+        .sidebar-header h1 { color: var(--primary-color); font-size: 24px; margin-bottom: 30px; display: flex; align-items: center; }
+        .sidebar-header h1 i { margin-right: 10px; color: var(--secondary-color); }
+        .upload-area { border: 2px dashed var(--accent-color); border-radius: 8px; padding: 40px 20px; text-align: center; cursor: pointer; }
+        #pdf-upload { display: none; }
+        .analyze-button { width: 100%; padding: 15px; margin-top: 20px; font-size: 18px; font-weight: bold; color: #fff; background-color: var(--secondary-color); border: none; border-radius: 8px; cursor: pointer; }
+        .analyze-button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .dashboard-header { padding: 20px; background-color: #f8f9fa; border-radius: 10px; margin-top: 30px; position: relative; }
+        #analyze-another-btn { display: none; position: absolute; top: 20px; left: -10px; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .main-container.analysis-active #analyze-another-btn { display: block; }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .summary-card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; text-align: center; }
+        .summary-card .value { font-size: 28px; font-weight: bold; color: var(--secondary-color); }
+        .breakdown-container { padding: 20px; background-color: #f8f9fa; border-radius: 10px; margin-top: 20px; }
+        .search-container { position: relative; }
+        #search-evidence { width: 100%; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 5px; padding: 8px 30px 8px 10px; }
+        #clear-search-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; color: #aaa; cursor: pointer; display: none; }
+        .evidence-controls { display: flex; gap: 10px; margin-bottom: 15px; margin-top: 15px; }
+        .control-btn { background: none; border: 1px solid var(--accent-color); color: var(--secondary-color); padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .category-details { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; }
+        .category-summary { display: flex; align-items: center; padding: 15px; cursor: pointer; font-size: 1.1em; font-weight: bold; color: var(--primary-color); list-style: none; }
+        .category-summary .icon { margin-right: 12px; transition: transform 0.3s ease; color: var(--secondary-color); }
+        .category-details[open] > .category-summary .icon { transform: rotate(90deg); }
+        .evidence-item { padding: 12px 15px 12px 25px; border-top: 1px solid var(--border-color); }
+        .evidence-item:hover { background-color: #e8f8f5; }
+        .evidence-item.active-evidence { background-color: #d1f0e9; }
+        .initiative-title { font-weight: bold; display: flex; align-items: center; }
+        .initiative-title .info-icon { font-size: 12px; margin-left: 8px; color: var(--accent-color); cursor: help; }
+        .evidence-text { color: #555; display: block; margin: 4px 0; }
+        .evidence-link { text-decoration: none; color: #0077b6; font-size: 0.9em; }
+        #tooltip { position: absolute; background-color: #333; color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+        .pdf-container { width: 100%; height: 100%; background-color: var(--card-bg); border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .pdf-container iframe { width: 100%; height: 100%; border: none; border-radius: 10px; }
+        #loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .spinner { width: 60px; height: 60px; border: 5px solid var(--accent-color); border-top-color: var(--secondary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="">
+    <div id="loader-overlay"><div class="spinner"></div></div>
+    <div id="tooltip"></div>
+
+    <main class="main-container" id="main-container">
+        <section id="analysis-panel" class="analysis-panel">
+            <!-- Content is managed by script.js -->
+        </section>
+        <section id="pdf-panel" class="pdf-panel">
+            <!-- Content is managed by script.js -->
+        </section>
+    </main>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
